@@ -23,10 +23,10 @@ silently corrupts a different variable in the proxy.
 𝗧𝗵𝗲 𝗞𝗶𝗹𝗹𝗲𝗿 𝗣𝗮𝘁𝘁𝗲𝗿𝗻:
 
 1️⃣ Proxy stores 𝚒𝚖𝚙𝚕𝚎𝚖𝚎𝚗𝚝𝚊𝚝𝚒𝚘𝚗 at 𝘀𝗹𝗼𝘁 0
-2️⃣ Logic stores 𝚙𝚎𝚗𝚍𝚒𝚗𝚐𝙪𝚍𝚖𝚒𝚗 at 𝘀𝗹𝗼𝘁 0 — different name, same slot
-3️⃣ Attacker calls 𝚜𝚎𝚝𝙹𝚎𝚗𝚍𝚒𝚗𝚐𝙪𝚍𝚖𝚒𝚗𝙑𝚖𝚊𝚕𝚒𝚌𝚒𝚘𝚞𝚜𝙪𝚍𝚍𝚛𝙒 through proxy
+2️⃣ Logic stores 𝚙𝚎𝚗𝚍𝚒𝚗𝚐𝙰𝚍𝚖𝚒𝚗 at 𝘀𝗹𝗼𝘁 0 — different name, same slot
+3️⃣ Attacker calls 𝚜𝚎𝚝𝙿𝚎𝚗𝚍𝚒𝚗𝚐𝙰𝚍𝚖𝚒𝚗(𝚖𝚊𝚕𝚒𝚌𝚒𝚘𝚞𝚜𝙰𝚍𝚍𝚛) through proxy
 4️⃣ 𝚍𝚎𝚕𝚎𝚐𝚊𝚝𝚎𝚌𝚊𝚕𝚕 writes to 𝗣𝗥𝗢𝗫𝗬'𝗦 𝘀𝗹𝗼𝘁 0 — not logic’s
-5️⃣ 𝚙𝚛𝚘𝚡𝚢𝙗𝚒𝚖𝚙𝚕𝚎𝚖𝚎𝚗𝚝𝚊𝚝𝚒𝚘𝚗 is now 𝗢𝗩𝗘𝗥𝗪𝗥𝗜𝗧𝗧𝗘𝗡 with attacker’s contract
+5️⃣ 𝚙𝚛𝚘𝚡𝚢.𝚒𝚖𝚙𝚕𝚎𝚖𝚎𝚗𝚝𝚊𝚝𝚒𝚘𝚗 is now 𝗢𝗩𝗘𝗥𝗪𝗥𝗜𝗧𝗧𝗘𝗡 with attacker’s contract
 6️⃣ Every future call routes to malicious logic 💥
 
 The transaction looks like a simple admin update.
@@ -47,16 +47,16 @@ It’s actually a full proxy takeover.
 Instead of storing the implementation pointer at slot 0,
 store it at a slot derived from a 𝗸𝗲𝗰𝗰𝗮𝗸256 𝗵𝗮𝘀𝗵:
 
-    𝚋𝚢𝚝𝚎𝚜𝙜𝙛𝙉𝚌𝚘𝚗𝚜𝚝𝚊𝚗𝚝𝙉𝙲𝙶𝙹𝙵𝚈𝙼𝙵𝙸𝙽𝙉𝙦
-        𝚔𝚎𝚌𝚌𝚊𝚔𝙛𝙞𝙟𝙑𝙋𝚎𝚒𝚙𝙚𝙢𝙟𝙠𝙗𝚙𝚛𝚘𝚡𝚢𝙗𝚒𝚖𝚙𝚕𝚎𝚖𝚎𝚗𝚝𝚊𝚝𝚒𝚘𝚗𝙋𝙒𝙉𝙖𝙉𝙚𝙤
+    bytes32 constant IMPL_SLOT =
+        keccak256("eip1967.proxy.implementation") - 1;
 
-This slot (0𝘅3608...) will never collide with
+This slot (0x3608...) will never collide with
 any logic contract’s sequential storage (slot 0, 1, 2…).
 
 𝗧𝘄𝗼 𝗹𝗮𝘆𝗲𝗿𝘀 𝗼𝗳 𝗽𝗿𝗼𝘁𝗲𝗰𝘁𝗶𝗼𝗻:
 
 1. 𝗘𝗜𝗣-1967 𝘀𝘁𝗼𝗿𝗮𝗴𝗲 𝘀𝗹𝗼𝘁𝘀  — pointers live at pseudo-random hash-derived slots
-2. 𝗨𝘀𝗲 𝗯𝗮𝘁𝘁𝗹𝗲-𝘁𝗲𝘀𝘁𝗲𝗱 𝗽𝗿𝗼𝘅𝗶𝗲𝘀  — OpenZeppelin’s 𝙽𝚛𝚊𝚗𝚜𝚙𝚊𝚛𝚎𝚗𝚝𝙾𝚙𝚐𝚛𝚊𝚍𝚎𝚊𝚋𝚕𝚎𝙹𝚛𝚘𝚡𝚢 or 𝙾𝙾𝙹𝙼
+2. 𝗨𝘀𝗲 𝗯𝗮𝘁𝘁𝗹𝗲-𝘁𝗲𝘀𝘁𝗲𝗱 𝗽𝗿𝗼𝘅𝗶𝗲𝘀  — OpenZeppelin’s 𝚃𝚛𝚊𝚗𝚜𝚙𝚊𝚛𝚎𝚗𝚝𝚄𝚙𝚐𝚛𝚊𝚍𝚎𝚊𝚋𝚕𝚎𝙿𝚛𝚘𝚡𝚢 or 𝚄𝚄𝙿𝚂
    implement this correctly. Rolling your own proxy is a footgun.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━

