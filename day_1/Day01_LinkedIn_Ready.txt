@@ -1,0 +1,92 @@
+🔐 𝗗𝗮𝘆 𝟭/𝟯𝟬 — 𝗦𝗼𝗹𝗶𝗱𝗶𝘁𝘆 𝗦𝗲𝗰𝘂𝗿𝗶𝘁𝘆 𝗗𝗲𝗲𝗽 𝗗𝗶𝘃𝗲
+
+𝗥𝗲𝗮𝗱-𝗢𝗻𝗹𝘆 𝗥𝗲𝗲𝗻𝘁𝗿𝗮𝗻𝗰𝘆: The $𝟮𝟮𝟬𝗠+ Bug That Hides in 𝘃𝗶𝗲𝘄 Functions
+
+Most Solidity devs think reentrancy only hits state-changing functions.
+They're wrong.
+And protocols have lost hundreds of millions proving it.
+
+Here's how it works ⬇️
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+𝗧𝗵𝗲 𝗦𝗲𝘁𝘂𝗽:
+
+Imagine a liquidity pool with this innocent view function:
+
+    𝚏𝚞𝚗𝚌𝚝𝚒𝚘𝚗 𝚐𝚎𝚝𝚂𝚑𝚊𝚛𝚎𝙿𝚛𝚒𝚌𝚎() 𝚎𝚡𝚝𝚎𝚛𝚗𝚊𝚕 𝚟𝚒𝚎𝚠 𝚛𝚎𝚝𝚞𝚛𝚗𝚜 (𝚞𝚒𝚗𝚝𝟸𝟻𝟼) {
+        𝚛𝚎𝚝𝚞𝚛𝚗 (𝚊𝚍𝚍𝚛𝚎𝚜𝚜(𝚝𝚑𝚒𝚜).𝚋𝚊𝚕𝚊𝚗𝚌𝚎 * 𝟷𝚎𝟷𝟾) / 𝚝𝚘𝚝𝚊𝚕𝚂𝚑𝚊𝚛𝚎𝚜;
+    }
+
+No state changes. Just math. Looks safe, right?
+
+𝗡𝗼𝗽𝗲.
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+𝗧𝗵𝗲 𝗞𝗶𝗹𝗹𝗲𝗿 𝗣𝗮𝘁𝘁𝗲𝗿𝗻:
+
+1️⃣ Attacker calls 𝚍𝚎𝚙𝚘𝚜𝚒𝚝() on the pool
+2️⃣ Pool receives ETH 𝗕𝗘𝗙𝗢𝗥𝗘 minting shares (CEI violation)
+3️⃣ Attacker's 𝚛𝚎𝚌𝚎𝚒𝚟𝚎() callback fires 𝗠𝗜𝗗-𝗧𝗥𝗔𝗡𝗦𝗔𝗖𝗧𝗜𝗢𝗡
+4️⃣ Inside callback → calls a 𝗟𝗘𝗡𝗗𝗜𝗡𝗚 𝗣𝗥𝗢𝗧𝗢𝗖𝗢𝗟 that reads 𝚐𝚎𝚝𝚂𝚑𝚊𝚛𝚎𝙿𝚛𝚒𝚌𝚎()
+5️⃣ ETH balance ↑ 𝗯𝘂𝘁 totalShares unchanged → price is 𝗜𝗡𝗙𝗟𝗔𝗧𝗘𝗗
+6️⃣ Attacker borrows with inflated collateral value 💰
+
+The view function returned 𝗰𝗼𝗿𝗿𝗲𝗰𝘁 𝗺𝗮𝘁𝗵 on 𝗶𝗻𝗰𝗼𝗻𝘀𝗶𝘀𝘁𝗲𝗻𝘁 𝘀𝘁𝗮𝘁𝗲.
+That's what makes it invisible.
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+💀 𝗥𝗲𝗮𝗹-𝗪𝗼𝗿𝗹𝗱 𝗩𝗶𝗰𝘁𝗶𝗺𝘀:
+
+→ Curve Finance / Vyper reentrancy — $𝟳𝟬𝗠+ (July 2023)
+→ Sentiment Protocol — $𝟭𝗠 (April 2023)
+→ Multiple Balancer-integrated protocols
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ 𝗧𝗵𝗲 𝗙𝗶𝘅 (𝟯 𝗟𝗮𝘆𝗲𝗿𝘀):
+
+𝟭. Follow Checks-Effects-Interactions
+   → Update state 𝗕𝗘𝗙𝗢𝗥𝗘 external calls. Always.
+
+𝟮. Apply reentrancy guards to 𝘃𝗶𝗲𝘄 functions too
+   → Yes, really. This one line saves millions:
+
+    𝚛𝚎𝚚𝚞𝚒𝚛𝚎(_𝚕𝚘𝚌𝚔𝚎𝚍 == 𝟷, "𝚁𝙴𝙴𝙽𝚃𝚁𝙰𝙽𝙲𝚈");
+
+𝟯. Never trust external view functions as real-time oracles
+   → If your protocol reads another contract's state,
+     you're trusting their state is consistent. During a
+     reentrancy window — 𝗶𝘁'𝘀 𝗻𝗼𝘁.
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+🧠 𝗧𝗵𝗲 𝗟𝗲𝘀𝘀𝗼𝗻:
+
+In Solidity, "𝚛𝚎𝚊𝚍-𝚘𝚗𝚕𝚢" ≠ "𝘀𝗮𝗳𝗲"
+
+A view function can return perfectly valid math
+on completely broken state.
+
+If you're building DeFi and not thinking about this,
+you're one callback away from a postmortem.
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔁 I'm starting a 𝟯𝟬-𝗱𝗮𝘆 𝗱𝗲𝗲𝗽 𝗱𝗶𝘃𝗲 into Solidity security, smart contract patterns, and EVM internals.
+
+One vulnerability. One fix. Every single day.
+
+Follow along if you want to write contracts that 𝘀𝘂𝗿𝘃𝗶𝘃𝗲 𝗺𝗮𝗶𝗻𝗻𝗲𝘁.
+
+💬 What's the most dangerous Solidity bug you've seen in production? Drop it below ⬇️
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+📸 [Attach your CodeSnap screenshots of the vulnerable + secure code here]
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+#Solidity #Ethereum #SmartContracts #Web3Security #BlockchainDev #DeFi #SmartContractAudit #Reentrancy #Web3 #CryptoSecurity #EVM #BuildInPublic #Day1of30 #SmartContractSecurity #Blockchain
