@@ -2,12 +2,12 @@
 pragma solidity ^0.8.20;
 
 // ================================================================
-//  DAY 2 / 3 — DELEGATECALL STORAGE COLLISION
+//  DAY 2 / 3   DELEGATECALL STORAGE COLLISION
 //  The $280M Bug Still Hiding in Proxy Contracts
 // ================================================================
 
 // ================================================================
-//  PART 1 — VULNERABLE  (Storage Layout Mismatch)
+//  PART 1   VULNERABLE  (Storage Layout Mismatch)
 // ================================================================
 
 /// @notice Proxy stores implementation address at slot 0.
@@ -33,7 +33,7 @@ contract VulnerableProxy {
     }
 }
 
-/// @notice ⚠️ MISMATCHED layout — slot 0 here is NOT the implementation.
+/// @notice ⚠️ MISMATCHED layout   slot 0 here is NOT the implementation.
 ///         When delegatecalled, writes to slot 0 overwrite proxy.implementation!
 contract VulnerableLogic {
     address public pendingAdmin; // slot 0 ← COLLIDES with proxy.implementation
@@ -88,8 +88,8 @@ contract Attacker {
 }
 
 contract MaliciousLogic {
-    address private _implSlot;  // slot 0 — mirrors proxy.implementation (already hijacked)
-    address private _ownerSlot; // slot 1 — mirrors proxy.owner
+    address private _implSlot;  // slot 0   mirrors proxy.implementation (already hijacked)
+    address private _ownerSlot; // slot 1   mirrors proxy.owner
 
     // Writes msg.sender to slot 1 of the proxy, hijacking proxy.owner
     function claimOwnership() external {
@@ -105,7 +105,7 @@ contract MaliciousLogic {
 
 
 // ================================================================
-//  PART 2 — SECURE  (EIP-1967 Isolated Storage Slots)
+//  PART 2   SECURE  (EIP-1967 Isolated Storage Slots)
 // ================================================================
 contract SecureProxy {
     // EIP-1967 implementation slot
@@ -123,7 +123,7 @@ contract SecureProxy {
         _setAdmin(msg.sender);
     }
 
-    // ✅ Only admin can upgrade — implementation pointer lives at EIP-1967 slot
+    // ✅ Only admin can upgrade   implementation pointer lives at EIP-1967 slot
     function upgradeTo(address newImpl) external {
         require(msg.sender == _getAdmin(), "Not admin");
         _setImpl(newImpl);
@@ -162,11 +162,11 @@ contract SecureProxy {
     }
 }
 
-/// @notice ✅ Safe logic contract — its slot 0/1/2 never touch EIP-1967 slots.
+/// @notice ✅ Safe logic contract   its slot 0/1/2 never touch EIP-1967 slots.
 contract SecureLogic {
-    address public pendingAdmin; // slot 0  — harmless, no EIP-1967 collision
-    address public admin;        // slot 1  — harmless
-    uint256 public value;        // slot 2  — harmless
+    address public pendingAdmin; // slot 0    harmless, no EIP-1967 collision
+    address public admin;        // slot 1    harmless
+    uint256 public value;        // slot 2    harmless
 
     function setPendingAdmin(address _admin) external {
         pendingAdmin = _admin;
@@ -194,6 +194,6 @@ contract SecureLogic {
 //  ✅ SECURE pattern  (EIP-1967):
 //     • Implementation & admin stored at pseudo-random keccak256 slots
 //     • Logic contract's natural storage (slot 0, 1, 2…) never collides
-//     • Use OpenZeppelin's TransparentUpgradeableProxy or UUPS — they
+//     • Use OpenZeppelin's TransparentUpgradeableProxy or UUPS   they
 //       implement EIP-1967 out of the box
 // ================================================================
