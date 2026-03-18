@@ -2,23 +2,9 @@
 pragma solidity ^0.8.20;
 
 // ================================================================
-//  DAY 2 / 30 — DELEGATECALL STORAGE COLLISION
+//  DAY 2 / 3 — DELEGATECALL STORAGE COLLISION
 //  The $280M Bug Still Hiding in Proxy Contracts
 // ================================================================
-//
-//  CONCEPT:
-//  delegatecall runs foreign code inside YOUR storage context.
-//  If the proxy and logic contract have different storage layouts,
-//  a write in the logic contract silently corrupts the proxy's
-//  critical variables — including the implementation pointer itself.
-//
-//  REAL WORLD:
-//  → Parity Multisig Wallet     — $280M frozen forever  (Nov 2017)
-//  → Audius Governance Proxy    — $6M stolen            (Jul 2022)
-//  → Multiple upgradeable proxy hacks across DeFi
-//
-// ================================================================
-
 
 // ================================================================
 //  PART 1 — VULNERABLE  (Storage Layout Mismatch)
@@ -121,18 +107,6 @@ contract MaliciousLogic {
 // ================================================================
 //  PART 2 — SECURE  (EIP-1967 Isolated Storage Slots)
 // ================================================================
-//
-//  FIX:
-//  Store the implementation and admin pointers at slots derived from
-//  a keccak256 hash (EIP-1967). These slots are astronomically
-//  unlikely to collide with any logic contract's sequential storage.
-//
-//  Standard slots (never change these — wallets & explorers rely on them):
-//  • Implementation : keccak256("eip1967.proxy.implementation") - 1
-//  • Admin          : keccak256("eip1967.proxy.admin")          - 1
-//
-// ================================================================
-
 contract SecureProxy {
     // EIP-1967 implementation slot
     bytes32 private constant IMPL_SLOT =
@@ -222,9 +196,4 @@ contract SecureLogic {
 //     • Logic contract's natural storage (slot 0, 1, 2…) never collides
 //     • Use OpenZeppelin's TransparentUpgradeableProxy or UUPS — they
 //       implement EIP-1967 out of the box
-//
-//  RULE OF THUMB:
-//     If you're writing a custom proxy without EIP-1967, you're one
-//     layout mismatch away from a $280M bug.
-//
 // ================================================================
