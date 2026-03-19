@@ -1,0 +1,49 @@
+🔐 𝗗𝗮𝘆 3/30 — 𝗦𝗼𝗹𝗶𝗱𝗶𝘁𝘆 𝗦𝗲𝗰𝘂𝗿𝗶𝘁𝘆 𝗗𝗲𝗲𝗽 𝗗𝗶𝘃𝗲
+
+𝗨𝗻𝘀𝗮𝗳𝗲 𝗗𝗼𝘄𝗻𝗰𝗮𝘀𝘁𝗶𝗻𝗴: The Overflow Solidity 0.8.x Will Never Catch
+
+"I'm on 0.8.x. I'm safe from overflow bugs."
+
+Wrong. Bridges and vaults are being drained because of this right now.
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+0.8.x only catches 𝗮𝗿𝗶𝘁𝗵𝗺𝗲𝘁𝗶𝗰 overflow (+, -, *).
+Explicit casts — uint128(x), uint64(x) — 𝘀𝗶𝗹𝗲𝗻𝘁𝗹𝘆 𝘁𝗿𝘂𝗻𝗰𝗮𝘁𝗲.
+No revert. No warning. Just wrong data on-chain.
+
+𝗘𝘅𝗮𝗺𝗽𝗹𝗲: uint128(type(uint128).max + 1) = 0
+User sends real ETH. Bridge records 0. Funds locked forever.
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+🕵️ 𝗪𝗵𝗲𝗿𝗲 𝗜𝘁 𝗛𝗶𝗱𝗲𝘀:
+
+→ uint96 balances — packed ERC-20 tokens
+→ uint64 rewardRate — staking contracts
+→ uint32(block.timestamp) — overflows in year 2106
+→ uint24 feeTier — Uniswap-style AMMs
+
+Every packed storage slot is a potential silent truncation.
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ 𝗧𝗵𝗲 𝗙𝗶𝘅: SafeCast — reverts instead of truncating.
+One import. Zero silent data corruption.
+(See screenshots: vulnerable bridge vs SafeCast fix)
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+𝗧𝗵𝗲 𝗺𝗼𝗿𝗲 𝘆𝗼𝘂 𝗽𝗮𝗰𝗸 𝘀𝘁𝗼𝗿𝗮𝗴𝗲, the more downcasts you write.
+The more downcasts, the more silent truncations you risk.
+
+𝗦𝗮𝗳𝗲𝗖𝗮𝘀𝘁 is not optional. It's the price of packed storage.
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔁 Day 3/30 — one vulnerability, one fix, every day.
+Follow along if you want to write contracts that 𝘀𝘂𝗿𝘃𝗶𝘃𝗲 𝗺𝗮𝗶𝗻𝗻𝗲𝘁.
+
+💬 Ever caught a silent downcast bug in an audit? Drop it below ⬇️
+
+#Solidity #Ethereum #SmartContracts #Web3Security #BlockchainDev #DeFi #SmartContractAudit #SafeCast #IntegerOverflow #EVM #Web3 #CryptoSecurity #BuildInPublic #Day3of30 #SmartContractSecurity #Blockchain #SolidityTips
